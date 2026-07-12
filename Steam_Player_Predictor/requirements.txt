@@ -1,0 +1,6 @@
+pandas>=3.0
+scikit-learn>=1.9
+joblib>=1.5
+streamlit>=1.59
+matplotlib>=3.11
+pytest>=9.1
