@@ -23,4 +23,4 @@ else:
 df = pd.DataFrame([row])
 df = df[features_columns]
 wynik = model.predict(df)
-print("przewidywana liczba graczy:" + wynik[0])
+print(f"przewidywana liczba graczy: {wynik[0]:.2f}")
