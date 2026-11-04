@@ -1,4 +1,5 @@
 import joblib
+import numpy as np
 import pandas as pd
 
 model = joblib.load("../models/model.pkl")
@@ -6,12 +7,14 @@ features_columns = joblib.load("../models/feature_columns.pkl")
 
 cena = float(input("podaj cene gry: "))
 ocena = float(input("podaj ocene gry: "))
+recenzje = float(input("podaj liczbe recenzji gry: "))
 gatunek = input("podaj gatunek gry: ")
 
 row = {col: 0 for col in features_columns}
 
 row["Price_USD"] = cena
 row["Review_Score_Pct"] = ocena
+row["Log_Reviews"] = np.log1p(recenzje)
 kolumna_gatunku = f"Primary_Genre_{gatunek}"
 
 if kolumna_gatunku not in row:
@@ -23,4 +26,5 @@ else:
 df = pd.DataFrame([row])
 df = df[features_columns]
 wynik = model.predict(df)
-print(f"przewidywana liczba graczy: {wynik[0]:.2f}")
+wynik = np.expm1(wynik[0])
+print(f"przewidywana liczba graczy: {wynik:.0f}")
