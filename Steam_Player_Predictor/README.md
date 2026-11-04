@@ -1,10 +1,10 @@
 # Steam Player Predictor
 
-A small end-to-end ML project that predicts a Steam game's 24-hour peak player count from its price, review score, and genre. Built to practice a full pipeline — data cleaning, model training/comparison, evaluation, and a simple interactive UI — rather than a one-off notebook.
+A small end-to-end ML project that predicts a Steam game's 24-hour peak player count from its price, review score, number of reviews, and genre. Built to practice a full pipeline — data cleaning, model training/comparison, evaluation, and a simple interactive UI — rather than a one-off notebook.
 
 ## Overview
 
-- **Input:** price (USD), review score (%), primary genre
+- **Input:** price (USD), review score (%), number of reviews, primary genre
 - **Output:** predicted 24h peak player count
 - **Data:** ~1000 Steam games, 12 raw columns (`data/steam.csv`)
 - **Models compared:** Linear Regression, Decision Tree, Random Forest (best one by R² is kept)
@@ -46,7 +46,7 @@ cd src
 python etl.py        # cleans data/steam.csv -> data/Clean_Steam.csv
 python train.py       # trains 3 models, saves the best to models/model.pkl
 python evaluate.py    # generates comparison plots
-python predict.py     # CLI: enter price/review score/genre, get a prediction
+python predict.py     # CLI: enter price/review score/number of reviews/genre, get a prediction
 ```
 
 Or launch the interactive app from the project root:
@@ -63,18 +63,22 @@ pytest tests/
 
 ## Model performance
 
-| Model              | R²     | MSE           |
-|--------------------|--------|---------------|
-| Linear Regression  | -0.14  | 233,087,926   |
-| Decision Tree      | -2.17  | 650,679,678   |
-| Random Forest      | -0.87  | 384,666,939   |
+The target is trained as `log1p(24h_Peak_Players)`. R² is shown both on that log scale and after converting predictions back to player counts.
 
-*(Best model — highest R² — is the one persisted to `models/model.pkl`.)*
+| Model              | R² (log) | R² (players) | MSE (log) |
+|--------------------|----------|--------------|-----------|
+| Linear Regression  | 0.28     | -0.07        | 2.71      |
+| Decision Tree      | 0.44     | -0.82        | 2.10      |
+| Random Forest      | 0.69     | 0.12         | 1.17      |
+
+*(Best model — highest R² on the log scale — is the one persisted to `models/model.pkl`.)*
 
 ## Limitations & possible improvements
 
-- All three models currently score **below** a naive mean-baseline (negative R²) — price/review score/genre alone aren't strong predictors of peak concurrent players. The dataset likely has much stronger signals that aren't used yet, e.g. `Total_Reviews` or `Estimated_Owners`.
-- Peak player counts are heavily right-skewed (a handful of huge titles dominate); a log-transform of the target could help.
+- The number of reviews is only known after release, so the model describes existing games and can't forecast an unreleased title. Without it, R² stays around 0 even with the log target: price, review score and genre carry almost no signal.
+- R² in player counts stays low because a handful of huge titles dominate the squared error.
+- `Total_Reviews` looks wrong for some of the biggest games (Dota 2: 14,369, Apex Legends: 1,577, Marvel Rivals: 0). These rows are kept as they are.
+- `Estimated_Owners` is exactly `Total_Reviews * 30`, so it adds no new information and isn't used.
 - No hyperparameter tuning has been done on the tree-based models yet.
 - Genre is currently a single primary category; `All_Tags` has richer multi-label info that isn't used.
 
